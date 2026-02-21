@@ -19,6 +19,7 @@ import { EvaluatorsPage } from "@phoenix/pages/evaluators/EvaluatorsPage";
 import { evaluatorsPageLoader } from "@phoenix/pages/evaluators/evaluatorsPageLoader";
 import { RootLayout } from "@phoenix/pages/RootLayout";
 import { settingsPromptsPageLoader } from "@phoenix/pages/settings/prompts/settingsPromptsPageLoader";
+import { SettingsAgentsPage } from "@phoenix/pages/settings/SettingsAgentsPage";
 import { SettingsAIProvidersPage } from "@phoenix/pages/settings/SettingsAIProvidersPage";
 import { settingsAIProvidersPageLoader } from "@phoenix/pages/settings/settingsAIProvidersPageLoader";
 import { SettingsAnnotationsPage } from "@phoenix/pages/settings/SettingsAnnotationsPage";
@@ -366,6 +367,13 @@ const router = createBrowserRouter(
               loader={settingsPromptsPageLoader}
               handle={{
                 crumb: () => "Prompts",
+              }}
+            />
+            <Route
+              path="agents"
+              element={<SettingsAgentsPage />}
+              handle={{
+                crumb: () => "Agents",
               }}
             />
           </Route>

@@ -99,6 +99,18 @@ export default defineConfig(() => {
               if (id.includes("codemirror")) {
                 return "vendor-codemirror";
               }
+              if (
+                id.includes("@ai-sdk/react") ||
+                id.includes("/node_modules/ai/")
+              ) {
+                return "vendor-ai-sdk-react";
+              }
+              if (id.includes("streamdown")) {
+                return "vendor-streamdown";
+              }
+              if (id.includes("@json-render")) {
+                return "vendor-json-render";
+              }
               return "vendor";
             }
           },

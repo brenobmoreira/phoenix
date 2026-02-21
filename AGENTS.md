@@ -102,6 +102,20 @@ tox run -e phoenix_main                  # Server only
 PHOENIX_SQL_DATABASE_URL=sqlite:///:memory: pnpm dev  # Fresh in-memory database
 ```
 
+To run Phoenix with authentication, set the following environment variables.
+
+```bash
+cd app && PHOENIX_SQL_DATABASE_URL=sqlite:///:memory: PHOENIX_ENABLE_AUTH=True PHOENIX_SECRET=<secret> PHOENIX_DEFAULT_ADMIN_INITIAL_PASSWORD=<password> pnpm dev
+```
+
+Generate a secure value for `PHOENIX_SECRET` with:
+
+```bash
+openssl rand -hex 32
+```
+
+You can then log into the `admin@localhost` user using the specified password. You will need to reset the password before proceeding into the app.
+
 ## Project Structure
 
 ```

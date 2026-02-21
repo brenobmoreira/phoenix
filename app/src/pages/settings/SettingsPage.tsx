@@ -1,10 +1,10 @@
 import { css } from "@emotion/react";
-import { Suspense, useCallback } from "react";
-import type { Key } from "react-aria-components";
-import { Collection } from "react-aria-components";
+import { Suspense, useCallback, useMemo } from "react";
+import { Collection, type Key } from "react-aria-components";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 
 import { Loading, Tab, TabList, TabPanel, Tabs } from "@phoenix/components";
+import { useFeatureFlag } from "@phoenix/contexts/FeatureFlagsContext";
 
 const settingsPageCSS = css`
   overflow-y: auto;
@@ -21,7 +21,7 @@ const settingsPageInnerCSS = css`
   margin-right: auto;
 `;
 
-const tabs: { id: string; label: string }[] = [
+const TABS: { id: string; label: string }[] = [
   { id: "general", label: "General" },
   { id: "providers", label: "AI Providers" },
   { id: "models", label: "Models" },
@@ -30,10 +30,16 @@ const tabs: { id: string; label: string }[] = [
   { id: "prompts", label: "Prompts" },
   { id: "data", label: "Data Retention" },
 ];
+const AGENTS_TAB = { id: "agents", label: "Agents" };
 
 export function SettingsPage() {
+  const isAgentsEnabled = useFeatureFlag("agents");
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const tabs = useMemo(
+    () => (isAgentsEnabled ? [...TABS, AGENTS_TAB] : TABS),
+    [isAgentsEnabled]
+  );
   const tab = pathname.split("/settings")[1].replace("/", "");
   const onChangeTab = useCallback(
     (tab: Key) => {

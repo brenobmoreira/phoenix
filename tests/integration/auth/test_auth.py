@@ -1856,3 +1856,51 @@ class TestApiAccessViaCookiesOrApiKeys:
                         f"Admin/Member expected {expected_status_code} but got {response.status_code} "
                         f"for {method} {endpoint}"
                     )
+
+
+class TestVercelChatStreamRouterAuth:
+    _PARAMS = {
+        "provider_type": "builtin",
+        "provider": "ANTHROPIC",
+        "model_name": "claude-3-5-sonnet-20241022",
+    }
+
+    def test_unauthenticated_request_is_rejected(self, _app: _AppInfo) -> None:
+        response = _httpx_client(_app).post("/vercel_chat_stream", params=self._PARAMS)
+        with _EXPECTATION_401:
+            response.raise_for_status()
+
+    @pytest.mark.parametrize("role_or_user", list(UserRoleInput) + [_DEFAULT_ADMIN])
+    def test_all_authenticated_roles_can_access_vercel_chat_stream(
+        self,
+        role_or_user: _RoleOrUser,
+        _get_user: _GetUser,
+        _app: _AppInfo,
+    ) -> None:
+        user = _get_user(_app, role_or_user)
+        logged_in_user = user.log_in(_app)
+        response = _httpx_client(_app, logged_in_user.tokens).post(
+            "/vercel_chat_stream", params=self._PARAMS
+        )
+        assert response.status_code not in (401, 403)
+
+    @pytest.mark.parametrize("role_or_user", list(UserRoleInput) + [_DEFAULT_ADMIN])
+    def test_api_key_authentication_works_for_vercel_chat_stream(
+        self,
+        role_or_user: _RoleOrUser,
+        _get_user: _GetUser,
+        _app: _AppInfo,
+    ) -> None:
+        user = _get_user(_app, role_or_user)
+        logged_in_user = user.log_in(_app)
+        api_key = logged_in_user.create_api_key(_app)
+        response = _httpx_client(_app, api_key).post("/vercel_chat_stream", params=self._PARAMS)
+        assert response.status_code not in (401, 403)
+
+    def test_corrupt_access_token_is_rejected(self, _app: _AppInfo) -> None:
+        parts = _DEFAULT_ADMIN.log_in(_app).tokens.access_token.split(".")
+        # delete last 3 characters because base64 could have up to 2 padding characters
+        bad_token = _AccessToken(f"{parts[0][:-3]}.{parts[1]}.{parts[2]}")
+        response = _httpx_client(_app, bad_token).post("/vercel_chat_stream", params=self._PARAMS)
+        with _EXPECTATION_401:
+            response.raise_for_status()
