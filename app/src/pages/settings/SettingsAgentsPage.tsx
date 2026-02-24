@@ -208,7 +208,7 @@ const agentChatCSS = css`
     min-height: 0;
   }
 
-  .chat__user-bubble {
+  .chat__user-message {
     align-self: flex-end;
     background-color: var(--global-color-primary-700);
     color: var(--global-color-gray-50);
@@ -221,7 +221,7 @@ const agentChatCSS = css`
     word-wrap: break-word;
   }
 
-  .chat__assistant-bubble {
+  .chat__assistant-message {
     align-self: flex-start;
     max-width: 90%;
     font-size: var(--global-font-size-s);
@@ -332,11 +332,11 @@ function AgentChat({ chatApiUrl }: AgentChatProps) {
         )}
         {messages.map((m) =>
           m.role === "user" ? (
-            <div key={m.id} className="chat__user-bubble">
+            <div key={m.id} className="chat__user-message">
               {getTextContent(m.parts as { type: string; text?: string }[])}
             </div>
           ) : (
-            <div key={m.id} className="chat__assistant-bubble">
+            <div key={m.id} className="chat__assistant-message">
               {(m.parts as { type: string; text?: string }[]).map((part, i) =>
                 part.type === "text" ? (
                   <Streamdown key={i}>{part.text ?? ""}</Streamdown>
