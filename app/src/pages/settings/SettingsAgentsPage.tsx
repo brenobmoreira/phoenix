@@ -346,7 +346,6 @@ function AgentChat({ chatApiUrl }: AgentChatProps) {
           )
         )}
         {currentQuestion && (
-          // key resets Choices internal state (e.g. "No, but…" mode) between questions
           <div key={currentQuestionIndex}>
             <StateProvider>
               <VisibilityProvider>
