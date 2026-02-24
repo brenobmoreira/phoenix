@@ -27,10 +27,6 @@ import {
   type ModelMenuValue,
 } from "@phoenix/components/generative/ModelMenu";
 
-// ---------------------------------------------------------------------------
-// SettingsAgentsPage
-// ---------------------------------------------------------------------------
-
 export const AGENT_MODEL_LOCAL_STORAGE_KEY = "arize-phoenix-agent-config";
 
 const generativeProviderKeySchema = z.enum([
@@ -140,20 +136,12 @@ export function SettingsAgentsPage() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// AgentChat — Types
-// ---------------------------------------------------------------------------
-
 type ClarifyingQuestion = { question: string; choices: string[] };
 
 type PendingClarification = {
   toolCallId: string;
   questions: ClarifyingQuestion[];
 };
-
-// ---------------------------------------------------------------------------
-// AgentChat — System prompt & tool definition
-// ---------------------------------------------------------------------------
 
 const SYSTEM_PROMPT =
   "You are a helpful AI assistant. When a user's request is ambiguous or " +
@@ -198,20 +186,12 @@ const AGENT_TOOLS = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// AgentChat — Helpers
-// ---------------------------------------------------------------------------
-
 function getTextContent(parts: { type: string; text?: string }[]): string {
   return parts
     .filter((p): p is { type: "text"; text: string } => p.type === "text")
     .map((p) => p.text)
     .join("");
 }
-
-// ---------------------------------------------------------------------------
-// AgentChat — Styles
-// ---------------------------------------------------------------------------
 
 const containerCSS = css`
   display: flex;
@@ -260,10 +240,6 @@ const loadingDotsCSS = css`
   color: var(--global-text-color-300);
   font-size: var(--global-font-size-s);
 `;
-
-// ---------------------------------------------------------------------------
-// AgentChat — Component
-// ---------------------------------------------------------------------------
 
 interface AgentChatProps {
   chatApiUrl: string;
@@ -418,10 +394,6 @@ function AgentChat({ chatApiUrl }: AgentChatProps) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Choices — Catalog
-// ---------------------------------------------------------------------------
-
 const agentChatCatalog = defineCatalog(schema, {
   components: {
     Choices: {
@@ -445,10 +417,6 @@ const agentChatCatalog = defineCatalog(schema, {
   },
   actions: {},
 });
-
-// ---------------------------------------------------------------------------
-// Choices — Styles
-// ---------------------------------------------------------------------------
 
 const choicesContainerCSS = css`
   display: flex;
@@ -559,10 +527,6 @@ const submitButtonCSS = css`
     cursor: default;
   }
 `;
-
-// ---------------------------------------------------------------------------
-// Choices — Registry
-// ---------------------------------------------------------------------------
 
 const { registry: agentChatRegistry } = defineRegistry(agentChatCatalog, {
   components: {
