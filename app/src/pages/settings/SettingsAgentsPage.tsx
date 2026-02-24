@@ -28,210 +28,128 @@ import {
 } from "@phoenix/components/generative/ModelMenu";
 
 // ---------------------------------------------------------------------------
-// Catalog
+// SettingsAgentsPage
 // ---------------------------------------------------------------------------
 
-const agentChatCatalog = defineCatalog(schema, {
-  components: {
-    Choices: {
-      props: z.object({
-        question: z.string(),
-        options: z.array(z.string()),
-        /**
-         * Called with the selected or typed answer when the user submits.
-         * Passed as a function reference in the spec (not JSON-serializable),
-         * so this component is always constructed programmatically in TypeScript.
-         */
-        onAnswer: z.custom<(answer: string) => void>(
-          (v) => typeof v === "function"
-        ),
-        currentIndex: z.number(),
-        totalCount: z.number(),
-      }),
-      description:
-        "Displays a clarifying question with 2-3 selectable answer options. Always includes a 'No, but…' fallback for a custom typed answer.",
-    },
-  },
-  actions: {},
+export const AGENT_MODEL_LOCAL_STORAGE_KEY = "arize-phoenix-agent-config";
+
+const generativeProviderKeySchema = z.enum([
+  "ANTHROPIC",
+  "AWS",
+  "AZURE_OPENAI",
+  "DEEPSEEK",
+  "GOOGLE",
+  "OLLAMA",
+  "OPENAI",
+  "XAI",
+]) satisfies z.ZodType<GenerativeProviderKey>;
+
+const agentModelConfigSchema = z.object({
+  provider: generativeProviderKeySchema,
+  model: z.string(),
+  customProviderId: z.string().optional(),
 });
 
-// ---------------------------------------------------------------------------
-// Registry
-// ---------------------------------------------------------------------------
+export type AgentModelConfig = z.infer<typeof agentModelConfigSchema>;
 
-const choicesContainerCSS = css`
-  display: flex;
-  flex-direction: column;
-  gap: var(--global-dimension-size-100);
-  align-self: flex-start;
-  width: fit-content;
-  max-width: 360px;
-  background: var(--global-background-color-800);
-  border: 1px solid var(--global-border-color-default);
-  border-radius: var(--global-rounding-large);
-  padding: var(--global-dimension-size-150) var(--global-dimension-size-200);
-`;
+function toAgentModelConfig(model: ModelMenuValue): AgentModelConfig {
+  return {
+    provider: model.provider,
+    model: model.modelName,
+    customProviderId: model.customProvider?.id,
+  };
+}
 
-const cardHeaderCSS = css`
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--global-dimension-size-100);
-`;
+function toModelMenuValue(config: AgentModelConfig): ModelMenuValue {
+  return {
+    provider: config.provider,
+    modelName: config.model,
+    ...(config.customProviderId && {
+      customProvider: { id: config.customProviderId, name: "" },
+    }),
+  };
+}
 
-const questionCSS = css`
-  margin: 0;
-  font-size: var(--global-font-size-s);
-  line-height: var(--global-line-height-s);
-  color: var(--global-text-color-900);
-`;
+export function getAgentModelConfigFromLocalStorage(): AgentModelConfig | null {
+  try {
+    const raw = localStorage.getItem(AGENT_MODEL_LOCAL_STORAGE_KEY);
+    if (!raw) return null;
+    return agentModelConfigSchema.parse(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
 
-const progressCSS = css`
-  font-size: var(--global-font-size-xs);
-  color: var(--global-text-color-300);
-  white-space: nowrap;
-  flex-shrink: 0;
-`;
+export function SettingsAgentsPage() {
+  const [menuValue, setMenuValue] = useState<ModelMenuValue | null>(() => {
+    const config = getAgentModelConfigFromLocalStorage();
+    return config ? toModelMenuValue(config) : null;
+  });
 
-const optionsRowCSS = css`
-  display: flex;
-  flex-direction: column;
-  gap: var(--global-dimension-size-75);
-  align-items: flex-start;
-`;
+  const chatApiUrl = menuValue
+    ? menuValue.customProvider
+      ? `/vercel_chat_stream?provider_type=custom&provider_id=${encodeURIComponent(menuValue.customProvider.id)}&model_name=${encodeURIComponent(menuValue.modelName)}`
+      : `/vercel_chat_stream?provider_type=builtin&provider=${encodeURIComponent(menuValue.provider)}&model_name=${encodeURIComponent(menuValue.modelName)}`
+    : null;
 
-const baseButtonCSS = css`
-  font-size: var(--global-font-size-s);
-  padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
-  border-radius: var(--global-rounding-medium);
-  cursor: pointer;
-  white-space: nowrap;
-`;
-
-const optionButtonCSS = css`
-  ${baseButtonCSS};
-  border: 1px solid var(--global-color-primary-500);
-  background: transparent;
-  color: var(--global-color-primary-500);
-  &:hover {
-    background: color-mix(
-      in srgb,
-      var(--global-color-primary-500) 10%,
-      transparent
+  const handleChange = (model: ModelMenuValue) => {
+    setMenuValue(model);
+    localStorage.setItem(
+      AGENT_MODEL_LOCAL_STORAGE_KEY,
+      JSON.stringify(toAgentModelConfig(model))
     );
-  }
-`;
+  };
 
-const noButButtonCSS = css`
-  ${baseButtonCSS};
-  border: 1px solid var(--global-border-color-default);
-  background: transparent;
-  color: var(--global-text-color-300);
-  &:hover {
-    background: color-mix(
-      in srgb,
-      var(--global-text-color-300) 8%,
-      transparent
-    );
-  }
-`;
-
-const customFormCSS = css`
-  display: flex;
-  gap: var(--global-dimension-size-75);
-  flex: 1;
-  min-width: 0;
-`;
-
-const customInputCSS = css`
-  flex: 1;
-  min-width: 0;
-  font-size: var(--global-font-size-s);
-  padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
-  border-radius: var(--global-rounding-medium);
-  border: 1px solid var(--global-border-color-default);
-  background: transparent;
-  color: var(--global-text-color-900);
-  outline: none;
-  &:focus {
-    border-color: var(--global-color-primary-500);
-  }
-`;
-
-const submitButtonCSS = css`
-  ${baseButtonCSS};
-  border: none;
-  background: var(--global-color-primary-500);
-  color: white;
-  &:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-`;
-
-const { registry: agentChatRegistry } = defineRegistry(agentChatCatalog, {
-  components: {
-    Choices: ({ props }) => {
-      const [customMode, setCustomMode] = useState(false);
-      const [customText, setCustomText] = useState("");
-
-      return (
-        <div css={choicesContainerCSS}>
-          <div css={cardHeaderCSS}>
-            <p css={questionCSS}>{props.question}</p>
-            {props.totalCount > 1 && (
-              <span css={progressCSS}>
-                {props.currentIndex + 1}/{props.totalCount}
-              </span>
-            )}
-          </div>
-          <div css={optionsRowCSS}>
-            {props.options.map((opt) => (
-              <button
-                key={opt}
-                css={optionButtonCSS}
-                onClick={() => props.onAnswer(opt)}
-              >
-                {opt}
-              </button>
-            ))}
-            {customMode ? (
-              <form
-                css={customFormCSS}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const trimmed = customText.trim();
-                  if (trimmed) {
-                    props.onAnswer(trimmed);
-                  }
-                }}
-              >
-                <input
-                  autoFocus
-                  css={customInputCSS}
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  placeholder="Enter your answer…"
-                />
-                <button
-                  type="submit"
-                  css={submitButtonCSS}
-                  disabled={!customText.trim()}
-                >
-                  Submit
-                </button>
-              </form>
-            ) : (
-              <button css={noButButtonCSS} onClick={() => setCustomMode(true)}>
-                Something else…
-              </button>
-            )}
-          </div>
+  return (
+    <Flex direction="column" gap="size-200" width="100%">
+      <Card title="Agent Configuration">
+        <div
+          css={[
+            css`
+              padding: var(--global-dimension-static-size-200);
+            `,
+            fieldBaseCSS,
+          ]}
+        >
+          <Label>Provider and Model</Label>
+          <Flex direction="row" gap="size-50" alignItems="end">
+            <ModelMenu value={menuValue} onChange={handleChange} />
+            <Button
+              size="S"
+              aria-label="Clear provider and model"
+              isDisabled={!menuValue}
+              onPress={() => {
+                setMenuValue(null);
+                localStorage.removeItem(AGENT_MODEL_LOCAL_STORAGE_KEY);
+              }}
+            >
+              Clear
+            </Button>
+          </Flex>
+          <Text slot="description">
+            The AI provider and model used by the Phoenix agent.
+          </Text>
         </div>
-      );
-    },
-  },
-});
+      </Card>
+      {chatApiUrl && (
+        <Card title="Agent Chat">
+          <AgentChat key={chatApiUrl} chatApiUrl={chatApiUrl} />
+        </Card>
+      )}
+    </Flex>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AgentChat — Types
+// ---------------------------------------------------------------------------
+
+type ClarifyingQuestion = { question: string; choices: string[] };
+
+type PendingClarification = {
+  toolCallId: string;
+  questions: ClarifyingQuestion[];
+};
 
 // ---------------------------------------------------------------------------
 // AgentChat — System prompt & tool definition
@@ -279,17 +197,6 @@ const AGENT_TOOLS = [
     },
   },
 ];
-
-// ---------------------------------------------------------------------------
-// AgentChat — Types
-// ---------------------------------------------------------------------------
-
-type ClarifyingQuestion = { question: string; choices: string[] };
-
-type PendingClarification = {
-  toolCallId: string;
-  questions: ClarifyingQuestion[];
-};
 
 // ---------------------------------------------------------------------------
 // AgentChat — Helpers
@@ -512,114 +419,211 @@ function AgentChat({ chatApiUrl }: AgentChatProps) {
 }
 
 // ---------------------------------------------------------------------------
-// SettingsAgentsPage
+// Choices — Catalog
 // ---------------------------------------------------------------------------
 
-export const AGENT_MODEL_LOCAL_STORAGE_KEY = "arize-phoenix-agent-config";
-
-const generativeProviderKeySchema = z.enum([
-  "ANTHROPIC",
-  "AWS",
-  "AZURE_OPENAI",
-  "DEEPSEEK",
-  "GOOGLE",
-  "OLLAMA",
-  "OPENAI",
-  "XAI",
-]) satisfies z.ZodType<GenerativeProviderKey>;
-
-const agentModelConfigSchema = z.object({
-  provider: generativeProviderKeySchema,
-  model: z.string(),
-  customProviderId: z.string().optional(),
+const agentChatCatalog = defineCatalog(schema, {
+  components: {
+    Choices: {
+      props: z.object({
+        question: z.string(),
+        options: z.array(z.string()),
+        /**
+         * Called with the selected or typed answer when the user submits.
+         * Passed as a function reference in the spec (not JSON-serializable),
+         * so this component is always constructed programmatically in TypeScript.
+         */
+        onAnswer: z.custom<(answer: string) => void>(
+          (v) => typeof v === "function"
+        ),
+        currentIndex: z.number(),
+        totalCount: z.number(),
+      }),
+      description:
+        "Displays a clarifying question with 2-3 selectable answer options. Always includes a 'No, but…' fallback for a custom typed answer.",
+    },
+  },
+  actions: {},
 });
 
-export type AgentModelConfig = z.infer<typeof agentModelConfigSchema>;
+// ---------------------------------------------------------------------------
+// Choices — Styles
+// ---------------------------------------------------------------------------
 
-function toAgentModelConfig(model: ModelMenuValue): AgentModelConfig {
-  return {
-    provider: model.provider,
-    model: model.modelName,
-    customProviderId: model.customProvider?.id,
-  };
-}
+const choicesContainerCSS = css`
+  display: flex;
+  flex-direction: column;
+  gap: var(--global-dimension-size-100);
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 360px;
+  background: var(--global-background-color-800);
+  border: 1px solid var(--global-border-color-default);
+  border-radius: var(--global-rounding-large);
+  padding: var(--global-dimension-size-150) var(--global-dimension-size-200);
+`;
 
-function toModelMenuValue(config: AgentModelConfig): ModelMenuValue {
-  return {
-    provider: config.provider,
-    modelName: config.model,
-    ...(config.customProviderId && {
-      customProvider: { id: config.customProviderId, name: "" },
-    }),
-  };
-}
+const cardHeaderCSS = css`
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--global-dimension-size-100);
+`;
 
-export function getAgentModelConfigFromLocalStorage(): AgentModelConfig | null {
-  try {
-    const raw = localStorage.getItem(AGENT_MODEL_LOCAL_STORAGE_KEY);
-    if (!raw) return null;
-    return agentModelConfigSchema.parse(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
+const questionCSS = css`
+  margin: 0;
+  font-size: var(--global-font-size-s);
+  line-height: var(--global-line-height-s);
+  color: var(--global-text-color-900);
+`;
 
-export function SettingsAgentsPage() {
-  const [menuValue, setMenuValue] = useState<ModelMenuValue | null>(() => {
-    const config = getAgentModelConfigFromLocalStorage();
-    return config ? toModelMenuValue(config) : null;
-  });
+const progressCSS = css`
+  font-size: var(--global-font-size-xs);
+  color: var(--global-text-color-300);
+  white-space: nowrap;
+  flex-shrink: 0;
+`;
 
-  const chatApiUrl = menuValue
-    ? menuValue.customProvider
-      ? `/vercel_chat_stream?provider_type=custom&provider_id=${encodeURIComponent(menuValue.customProvider.id)}&model_name=${encodeURIComponent(menuValue.modelName)}`
-      : `/vercel_chat_stream?provider_type=builtin&provider=${encodeURIComponent(menuValue.provider)}&model_name=${encodeURIComponent(menuValue.modelName)}`
-    : null;
+const optionsRowCSS = css`
+  display: flex;
+  flex-direction: column;
+  gap: var(--global-dimension-size-75);
+  align-items: flex-start;
+`;
 
-  const handleChange = (model: ModelMenuValue) => {
-    setMenuValue(model);
-    localStorage.setItem(
-      AGENT_MODEL_LOCAL_STORAGE_KEY,
-      JSON.stringify(toAgentModelConfig(model))
+const baseButtonCSS = css`
+  font-size: var(--global-font-size-s);
+  padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
+  border-radius: var(--global-rounding-medium);
+  cursor: pointer;
+  white-space: nowrap;
+`;
+
+const optionButtonCSS = css`
+  ${baseButtonCSS};
+  border: 1px solid var(--global-color-primary-500);
+  background: transparent;
+  color: var(--global-color-primary-500);
+  &:hover {
+    background: color-mix(
+      in srgb,
+      var(--global-color-primary-500) 10%,
+      transparent
     );
-  };
+  }
+`;
 
-  return (
-    <Flex direction="column" gap="size-200" width="100%">
-      <Card title="Agent Configuration">
-        <div
-          css={[
-            css`
-              padding: var(--global-dimension-static-size-200);
-            `,
-            fieldBaseCSS,
-          ]}
-        >
-          <Label>Provider and Model</Label>
-          <Flex direction="row" gap="size-50" alignItems="end">
-            <ModelMenu value={menuValue} onChange={handleChange} />
-            <Button
-              size="S"
-              aria-label="Clear provider and model"
-              isDisabled={!menuValue}
-              onPress={() => {
-                setMenuValue(null);
-                localStorage.removeItem(AGENT_MODEL_LOCAL_STORAGE_KEY);
-              }}
-            >
-              Clear
-            </Button>
-          </Flex>
-          <Text slot="description">
-            The AI provider and model used by the Phoenix agent.
-          </Text>
+const noButButtonCSS = css`
+  ${baseButtonCSS};
+  border: 1px solid var(--global-border-color-default);
+  background: transparent;
+  color: var(--global-text-color-300);
+  &:hover {
+    background: color-mix(
+      in srgb,
+      var(--global-text-color-300) 8%,
+      transparent
+    );
+  }
+`;
+
+const customFormCSS = css`
+  display: flex;
+  gap: var(--global-dimension-size-75);
+  flex: 1;
+  min-width: 0;
+`;
+
+const customInputCSS = css`
+  flex: 1;
+  min-width: 0;
+  font-size: var(--global-font-size-s);
+  padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
+  border-radius: var(--global-rounding-medium);
+  border: 1px solid var(--global-border-color-default);
+  background: transparent;
+  color: var(--global-text-color-900);
+  outline: none;
+  &:focus {
+    border-color: var(--global-color-primary-500);
+  }
+`;
+
+const submitButtonCSS = css`
+  ${baseButtonCSS};
+  border: none;
+  background: var(--global-color-primary-500);
+  color: white;
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Choices — Registry
+// ---------------------------------------------------------------------------
+
+const { registry: agentChatRegistry } = defineRegistry(agentChatCatalog, {
+  components: {
+    Choices: ({ props }) => {
+      const [customMode, setCustomMode] = useState(false);
+      const [customText, setCustomText] = useState("");
+
+      return (
+        <div css={choicesContainerCSS}>
+          <div css={cardHeaderCSS}>
+            <p css={questionCSS}>{props.question}</p>
+            {props.totalCount > 1 && (
+              <span css={progressCSS}>
+                {props.currentIndex + 1}/{props.totalCount}
+              </span>
+            )}
+          </div>
+          <div css={optionsRowCSS}>
+            {props.options.map((opt) => (
+              <button
+                key={opt}
+                css={optionButtonCSS}
+                onClick={() => props.onAnswer(opt)}
+              >
+                {opt}
+              </button>
+            ))}
+            {customMode ? (
+              <form
+                css={customFormCSS}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const trimmed = customText.trim();
+                  if (trimmed) {
+                    props.onAnswer(trimmed);
+                  }
+                }}
+              >
+                <input
+                  autoFocus
+                  css={customInputCSS}
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  placeholder="Enter your answer…"
+                />
+                <button
+                  type="submit"
+                  css={submitButtonCSS}
+                  disabled={!customText.trim()}
+                >
+                  Submit
+                </button>
+              </form>
+            ) : (
+              <button css={noButButtonCSS} onClick={() => setCustomMode(true)}>
+                Something else…
+              </button>
+            )}
+          </div>
         </div>
-      </Card>
-      {chatApiUrl && (
-        <Card title="Agent Chat">
-          <AgentChat key={chatApiUrl} chatApiUrl={chatApiUrl} />
-        </Card>
-      )}
-    </Flex>
-  );
-}
+      );
+    },
+  },
+});
