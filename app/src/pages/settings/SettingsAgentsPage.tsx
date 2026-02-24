@@ -193,52 +193,52 @@ function getTextContent(parts: { type: string; text?: string }[]): string {
     .join("");
 }
 
-const containerCSS = css`
+const agentChatCSS = css`
   display: flex;
   flex-direction: column;
   height: 500px;
-`;
 
-const messagesCSS = css`
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--global-dimension-size-100);
-  padding: var(--global-dimension-size-200);
-  min-height: 0;
-`;
+  .chat__messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--global-dimension-size-100);
+    padding: var(--global-dimension-size-200);
+    min-height: 0;
+  }
 
-const userBubbleCSS = css`
-  align-self: flex-end;
-  background-color: var(--global-color-primary-700);
-  color: var(--global-color-gray-50);
-  border-radius: var(--global-rounding-large) var(--global-rounding-large) 0
-    var(--global-rounding-large);
-  padding: var(--global-dimension-size-100) var(--global-dimension-size-150);
-  max-width: 75%;
-  font-size: var(--global-font-size-s);
-  line-height: var(--global-line-height-s);
-  word-wrap: break-word;
-`;
+  .chat__user-bubble {
+    align-self: flex-end;
+    background-color: var(--global-color-primary-700);
+    color: var(--global-color-gray-50);
+    border-radius: var(--global-rounding-large) var(--global-rounding-large) 0
+      var(--global-rounding-large);
+    padding: var(--global-dimension-size-100) var(--global-dimension-size-150);
+    max-width: 75%;
+    font-size: var(--global-font-size-s);
+    line-height: var(--global-line-height-s);
+    word-wrap: break-word;
+  }
 
-const assistantBubbleCSS = css`
-  align-self: flex-start;
-  max-width: 90%;
-  font-size: var(--global-font-size-s);
-  line-height: var(--global-line-height-s);
-`;
+  .chat__assistant-bubble {
+    align-self: flex-start;
+    max-width: 90%;
+    font-size: var(--global-font-size-s);
+    line-height: var(--global-line-height-s);
+  }
 
-const emptyStateCSS = css`
-  text-align: center;
-  margin-top: var(--global-dimension-size-400);
-  color: var(--global-text-color-300);
-  font-size: var(--global-font-size-s);
-`;
+  .chat__empty {
+    text-align: center;
+    margin-top: var(--global-dimension-size-400);
+    color: var(--global-text-color-300);
+    font-size: var(--global-font-size-s);
+  }
 
-const loadingDotsCSS = css`
-  color: var(--global-text-color-300);
-  font-size: var(--global-font-size-s);
+  .chat__loading {
+    color: var(--global-text-color-300);
+    font-size: var(--global-font-size-s);
+  }
 `;
 
 interface AgentChatProps {
@@ -325,18 +325,18 @@ function AgentChat({ chatApiUrl }: AgentChatProps) {
   const currentQuestion = pendingClarification?.questions[currentQuestionIndex];
 
   return (
-    <div css={containerCSS}>
-      <div css={messagesCSS}>
+    <div css={agentChatCSS}>
+      <div className="chat__messages">
         {messages.length === 0 && !pendingClarification && (
-          <p css={emptyStateCSS}>Send a message to start chatting.</p>
+          <p className="chat__empty">Send a message to start chatting.</p>
         )}
         {messages.map((m) =>
           m.role === "user" ? (
-            <div key={m.id} css={userBubbleCSS}>
+            <div key={m.id} className="chat__user-bubble">
               {getTextContent(m.parts as { type: string; text?: string }[])}
             </div>
           ) : (
-            <div key={m.id} css={assistantBubbleCSS}>
+            <div key={m.id} className="chat__assistant-bubble">
               {(m.parts as { type: string; text?: string }[]).map((part, i) =>
                 part.type === "text" ? (
                   <Streamdown key={i}>{part.text ?? ""}</Streamdown>
@@ -377,7 +377,7 @@ function AgentChat({ chatApiUrl }: AgentChatProps) {
         )}
         {isLoading &&
           messages.at(-1)?.role !== "assistant" &&
-          !pendingClarification && <p css={loadingDotsCSS}>...</p>}
+          !pendingClarification && <p className="chat__loading">...</p>}
         <div ref={bottomRef} />
       </div>
       <MessageBar
@@ -418,7 +418,7 @@ const agentChatCatalog = defineCatalog(schema, {
   actions: {},
 });
 
-const choicesContainerCSS = css`
+const choicesCSS = css`
   display: flex;
   flex-direction: column;
   gap: var(--global-dimension-size-100);
@@ -429,102 +429,101 @@ const choicesContainerCSS = css`
   border: 1px solid var(--global-border-color-default);
   border-radius: var(--global-rounding-large);
   padding: var(--global-dimension-size-150) var(--global-dimension-size-200);
-`;
 
-const cardHeaderCSS = css`
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--global-dimension-size-100);
-`;
-
-const questionCSS = css`
-  margin: 0;
-  font-size: var(--global-font-size-s);
-  line-height: var(--global-line-height-s);
-  color: var(--global-text-color-900);
-`;
-
-const progressCSS = css`
-  font-size: var(--global-font-size-xs);
-  color: var(--global-text-color-300);
-  white-space: nowrap;
-  flex-shrink: 0;
-`;
-
-const optionsRowCSS = css`
-  display: flex;
-  flex-direction: column;
-  gap: var(--global-dimension-size-75);
-  align-items: flex-start;
-`;
-
-const baseButtonCSS = css`
-  font-size: var(--global-font-size-s);
-  padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
-  border-radius: var(--global-rounding-medium);
-  cursor: pointer;
-  white-space: nowrap;
-`;
-
-const optionButtonCSS = css`
-  ${baseButtonCSS};
-  border: 1px solid var(--global-color-primary-500);
-  background: transparent;
-  color: var(--global-color-primary-500);
-  &:hover {
-    background: color-mix(
-      in srgb,
-      var(--global-color-primary-500) 10%,
-      transparent
-    );
+  .choices__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--global-dimension-size-100);
   }
-`;
 
-const noButButtonCSS = css`
-  ${baseButtonCSS};
-  border: 1px solid var(--global-border-color-default);
-  background: transparent;
-  color: var(--global-text-color-300);
-  &:hover {
-    background: color-mix(
-      in srgb,
-      var(--global-text-color-300) 8%,
-      transparent
-    );
+  .choices__question {
+    margin: 0;
+    font-size: var(--global-font-size-s);
+    line-height: var(--global-line-height-s);
+    color: var(--global-text-color-900);
   }
-`;
 
-const customFormCSS = css`
-  display: flex;
-  gap: var(--global-dimension-size-75);
-  flex: 1;
-  min-width: 0;
-`;
-
-const customInputCSS = css`
-  flex: 1;
-  min-width: 0;
-  font-size: var(--global-font-size-s);
-  padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
-  border-radius: var(--global-rounding-medium);
-  border: 1px solid var(--global-border-color-default);
-  background: transparent;
-  color: var(--global-text-color-900);
-  outline: none;
-  &:focus {
-    border-color: var(--global-color-primary-500);
+  .choices__progress {
+    font-size: var(--global-font-size-xs);
+    color: var(--global-text-color-300);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
-`;
 
-const submitButtonCSS = css`
-  ${baseButtonCSS};
-  border: none;
-  background: var(--global-color-primary-500);
-  color: white;
-  &:disabled {
-    opacity: 0.4;
-    cursor: default;
+  .choices__options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--global-dimension-size-75);
+    align-items: flex-start;
+  }
+
+  .choices__option,
+  .choices__custom,
+  .choices__submit {
+    font-size: var(--global-font-size-s);
+    padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
+    border-radius: var(--global-rounding-medium);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .choices__option {
+    border: 1px solid var(--global-color-primary-500);
+    background: transparent;
+    color: var(--global-color-primary-500);
+    &:hover {
+      background: color-mix(
+        in srgb,
+        var(--global-color-primary-500) 10%,
+        transparent
+      );
+    }
+  }
+
+  .choices__custom {
+    border: 1px solid var(--global-border-color-default);
+    background: transparent;
+    color: var(--global-text-color-300);
+    &:hover {
+      background: color-mix(
+        in srgb,
+        var(--global-text-color-300) 8%,
+        transparent
+      );
+    }
+  }
+
+  .choices__custom-form {
+    display: flex;
+    gap: var(--global-dimension-size-75);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .choices__custom-input {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--global-font-size-s);
+    padding: var(--global-dimension-size-50) var(--global-dimension-size-100);
+    border-radius: var(--global-rounding-medium);
+    border: 1px solid var(--global-border-color-default);
+    background: transparent;
+    color: var(--global-text-color-900);
+    outline: none;
+    &:focus {
+      border-color: var(--global-color-primary-500);
+    }
+  }
+
+  .choices__submit {
+    border: none;
+    background: var(--global-color-primary-500);
+    color: white;
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
   }
 `;
 
@@ -535,20 +534,20 @@ const { registry: agentChatRegistry } = defineRegistry(agentChatCatalog, {
       const [customText, setCustomText] = useState("");
 
       return (
-        <div css={choicesContainerCSS}>
-          <div css={cardHeaderCSS}>
-            <p css={questionCSS}>{props.question}</p>
+        <div css={choicesCSS}>
+          <div className="choices__header">
+            <p className="choices__question">{props.question}</p>
             {props.totalCount > 1 && (
-              <span css={progressCSS}>
+              <span className="choices__progress">
                 {props.currentIndex + 1}/{props.totalCount}
               </span>
             )}
           </div>
-          <div css={optionsRowCSS}>
+          <div className="choices__options">
             {props.options.map((opt) => (
               <button
                 key={opt}
-                css={optionButtonCSS}
+                className="choices__option"
                 onClick={() => props.onAnswer(opt)}
               >
                 {opt}
@@ -556,7 +555,7 @@ const { registry: agentChatRegistry } = defineRegistry(agentChatCatalog, {
             ))}
             {customMode ? (
               <form
-                css={customFormCSS}
+                className="choices__custom-form"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const trimmed = customText.trim();
@@ -567,21 +566,24 @@ const { registry: agentChatRegistry } = defineRegistry(agentChatCatalog, {
               >
                 <input
                   autoFocus
-                  css={customInputCSS}
+                  className="choices__custom-input"
                   value={customText}
                   onChange={(e) => setCustomText(e.target.value)}
                   placeholder="Enter your answer…"
                 />
                 <button
                   type="submit"
-                  css={submitButtonCSS}
+                  className="choices__submit"
                   disabled={!customText.trim()}
                 >
                   Submit
                 </button>
               </form>
             ) : (
-              <button css={noButButtonCSS} onClick={() => setCustomMode(true)}>
+              <button
+                className="choices__custom"
+                onClick={() => setCustomMode(true)}
+              >
                 Something else…
               </button>
             )}
