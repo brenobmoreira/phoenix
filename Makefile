@@ -310,8 +310,8 @@ clean-notebooks: ## Clean Jupyter notebook metadata
 
 lint-python: ## Lint Python code with ruff
 	@echo -e "$(CYAN)Linting Python code...$(NC)"
-	@uvx ruff@0.12.5 format
-	@uvx ruff@0.12.5 check --fix
+	@uvx ruff@0.12.5 format --check
+	@uvx ruff@0.12.5 check
 	@echo -e "$(GREEN)✓ Done$(NC)"
 
 lint-frontend: ## Lint frontend (app/)
