@@ -1,16 +1,10 @@
 import { css } from "@emotion/react";
-import { useCallback, useState } from "react";
-import type { Key} from "react-aria-components";
+import { forwardRef, useCallback, useImperativeHandle, useState } from "react";
+import type { Key } from "react-aria-components";
 import { Input, TextArea } from "react-aria-components";
 import { graphql, useMutation } from "react-relay";
 
-import {
-  Button,
-  Flex,
-  Label,
-  TextField,
-  View,
-} from "@phoenix/components";
+import { Flex, Label, TextField, View } from "@phoenix/components";
 import { ComboBox, ComboBoxItem } from "@phoenix/components/combobox";
 import { useNotifyError, useNotifySuccess } from "@phoenix/contexts";
 
@@ -25,6 +19,12 @@ export type DocumentAnnotation = {
   explanation: string | null;
 };
 
+export type DocumentAnnotationFormHandle = {
+  save: () => void;
+  isBusy: boolean;
+  isValid: boolean;
+};
+
 const LABEL_SCORE_MAP: Record<string, number> = {
   relevant: 1,
   irrelevant: 0,
@@ -35,17 +35,18 @@ const PRESET_LABELS = [
   { id: "irrelevant", name: "irrelevant" },
 ];
 
-export function DocumentAnnotationForm({
-  spanNodeId,
-  documentPosition,
-  existingAnnotation,
-  onDismiss,
-}: {
-  spanNodeId: string;
-  documentPosition: number;
-  existingAnnotation?: DocumentAnnotation | null;
-  onDismiss?: () => void;
-}) {
+export const DocumentAnnotationForm = forwardRef<
+  DocumentAnnotationFormHandle,
+  {
+    spanNodeId: string;
+    documentPosition: number;
+    existingAnnotation?: DocumentAnnotation | null;
+    onSaved?: () => void;
+  }
+>(function DocumentAnnotationForm(
+  { spanNodeId, documentPosition, existingAnnotation, onSaved },
+  ref
+) {
   const notifyError = useNotifyError();
   const notifySuccess = useNotifySuccess();
 
@@ -163,6 +164,7 @@ export function DocumentAnnotationForm({
             title: "Annotation updated",
             message: "Document annotation saved successfully.",
           });
+          onSaved?.();
         },
         onError: (error) => {
           notifyError({
@@ -194,6 +196,7 @@ export function DocumentAnnotationForm({
             title: "Annotation created",
             message: "Document annotation saved successfully.",
           });
+          onSaved?.();
         },
         onError: (error) => {
           notifyError({
@@ -215,7 +218,18 @@ export function DocumentAnnotationForm({
     documentPosition,
     notifySuccess,
     notifyError,
+    onSaved,
   ]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      save: handleSave,
+      isBusy,
+      isValid: !!name.trim(),
+    }),
+    [handleSave, isBusy, name]
+  );
 
   return (
     <View padding="size-200">
@@ -280,22 +294,7 @@ export function DocumentAnnotationForm({
           <Label>Explanation</Label>
           <TextArea rows={2} placeholder="Optional explanation" />
         </TextField>
-        <Flex direction="row" gap="size-100" justifyContent="end">
-          {onDismiss && (
-            <Button size="S" onPress={onDismiss}>
-              Cancel
-            </Button>
-          )}
-          <Button
-            variant="primary"
-            size="S"
-            onPress={handleSave}
-            isDisabled={!name.trim() || isBusy}
-          >
-            Save
-          </Button>
-        </Flex>
       </Flex>
     </View>
   );
-}
+});
