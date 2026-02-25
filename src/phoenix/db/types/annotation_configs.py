@@ -20,7 +20,6 @@ class OptimizationDirection(Enum):
 
 
 class _BaseAnnotationConfig(DBBaseModel):
-    name: Optional[str] = None
     description: Optional[str] = None
 
 
@@ -96,3 +95,29 @@ AnnotationConfigType: TypeAlias = Annotated[
 
 class AnnotationConfig(RootModel[AnnotationConfigType]):
     root: AnnotationConfigType
+
+
+def _name_trimmed_and_non_empty(v: str) -> str:
+    if v.strip() != v:
+        raise ValueError("name must not have leading or trailing whitespace")
+    if not v.strip():
+        raise ValueError("name must be non-empty")
+    return v
+
+
+class CategoricalAnnotationConfigWithName(CategoricalAnnotationConfig):
+    name: Annotated[str, AfterValidator(_name_trimmed_and_non_empty)]
+
+
+class ContinuousAnnotationConfigWithName(ContinuousAnnotationConfig):
+    name: Annotated[str, AfterValidator(_name_trimmed_and_non_empty)]
+
+
+AnnotationConfigWithNameType: TypeAlias = Annotated[
+    Union[CategoricalAnnotationConfigWithName, ContinuousAnnotationConfigWithName],
+    Field(..., discriminator="type"),
+]
+
+
+class AnnotationConfigWithName(RootModel[AnnotationConfigWithNameType]):
+    root: AnnotationConfigWithNameType

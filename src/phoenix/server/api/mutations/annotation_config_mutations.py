@@ -111,7 +111,6 @@ def _to_pydantic_categorical_annotation_config(
     try:
         return CategoricalAnnotationConfigModel(
             type=AnnotationType.CATEGORICAL.value,
-            name=input.name,
             description=input.description,
             optimization_direction=input.optimization_direction,
             values=[
