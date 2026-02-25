@@ -27,6 +27,7 @@ from phoenix.db.types.annotation_configs import (
     ContinuousAnnotationConfigWithName,
     OptimizationDirection,
 )
+from phoenix.db.types.evaluators import InputMapping
 from phoenix.db.types.model_provider import (
     ModelProvider,
     is_sdk_compatible_with_model_provider,
@@ -56,9 +57,6 @@ from phoenix.server.api.input_types.GenerativeModelInput import (
     GenerativeModelCustomProviderInput,
     GenerativeModelInput,
     OpenAIApiType,
-)
-from phoenix.server.api.input_types.PlaygroundEvaluatorInput import (
-    EvaluatorInputMappingInput,
 )
 from phoenix.server.api.input_types.PromptVersionInput import (
     PromptChatTemplateInput,
@@ -135,7 +133,7 @@ class BaseEvaluator(ABC):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_configs: Sequence[EvaluatorOutputConfig],
         tracer: Optional[Tracer] = None,
@@ -240,7 +238,7 @@ class LLMEvaluator(BaseEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_configs: Sequence[EvaluatorOutputConfig],
         tracer: Optional[Tracer] = None,
@@ -540,7 +538,7 @@ class BuiltInEvaluator(BaseEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_configs: Sequence[EvaluatorOutputConfig],
         tracer: Optional[Tracer] = None,
@@ -564,7 +562,7 @@ class BuiltInEvaluator(BaseEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_config: EvaluatorOutputConfig,
         tracer: Optional[Tracer] = None,
@@ -985,12 +983,12 @@ async def get_evaluator_project_ids(
 def apply_input_mapping(
     *,
     input_schema: dict[str, Any],
-    input_mapping: "EvaluatorInputMappingInput",
+    input_mapping: InputMapping,
     context: dict[str, Any],
 ) -> dict[str, Any]:
     result: dict[str, Any] = {}
     # apply path mappings
-    if hasattr(input_mapping, "path_mapping"):
+    if input_mapping.path_mapping:
         for key, path_expr in input_mapping.path_mapping.items():
             try:
                 jsonpath = parse_jsonpath(path_expr)
@@ -1008,7 +1006,7 @@ def apply_input_mapping(
                 )
 
     # literal mappings take priority over path mappings
-    if hasattr(input_mapping, "literal_mapping"):
+    if input_mapping.literal_mapping:
         for key, value in input_mapping.literal_mapping.items():
             result[key] = value
 
@@ -1216,7 +1214,7 @@ class ContainsEvaluator(BuiltInEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_config: EvaluatorOutputConfig,
         tracer: Optional[Tracer] = None,
@@ -1464,7 +1462,7 @@ class ExactMatchEvaluator(BuiltInEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_config: EvaluatorOutputConfig,
         tracer: Optional[Tracer] = None,
@@ -1666,7 +1664,7 @@ class RegexEvaluator(BuiltInEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_config: EvaluatorOutputConfig,
         tracer: Optional[Tracer] = None,
@@ -1892,7 +1890,7 @@ class LevenshteinDistanceEvaluator(BuiltInEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_config: EvaluatorOutputConfig,
         tracer: Optional[Tracer] = None,
@@ -2112,7 +2110,7 @@ class JSONDistanceEvaluator(BuiltInEvaluator):
         self,
         *,
         context: dict[str, Any],
-        input_mapping: EvaluatorInputMappingInput,
+        input_mapping: InputMapping,
         name: str,
         output_config: EvaluatorOutputConfig,
         tracer: Optional[Tracer] = None,
