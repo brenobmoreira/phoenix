@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/Arize-ai/phoenix/compare/arize-phoenix-otel-v0.14.0...arize-phoenix-otel-v0.15.0) (2026-02-25)
+
+
+### Features
+
+* dataset evaluators ([5f47820](https://github.com/Arize-ai/phoenix/commit/5f4782012537d533570184a6ce1e005e9945d8bf))
+* dataset evaluators ([cf0e09a](https://github.com/Arize-ai/phoenix/commit/cf0e09a82a5e44c9df26619c6372d2474a289b49))
+
+
+### Bug Fixes
+
+* update slack invitation link ([#11612](https://github.com/Arize-ai/phoenix/issues/11612)) ([316833e](https://github.com/Arize-ai/phoenix/commit/316833e629baf1b9185d7c712d8816b927d69a96))
+
 ## [0.14.0](https://github.com/Arize-ai/phoenix/compare/arize-phoenix-otel-v0.13.1...arize-phoenix-otel-v0.14.0) (2025-11-19)
 
 
